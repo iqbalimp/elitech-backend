@@ -1,61 +1,53 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Proyek Manufaktur - Backend API (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API backend ini dibangun menggunakan Laravel untuk mengelola alur kerja manufaktur sederhana, mencakup perencanaan produksi oleh PPIC hingga eksekusi oleh tim Produksi.
 
-## About Laravel
+## 📝 Deskripsi Proses Bisnis
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Aplikasi ini mensimulasikan alur kerja manufaktur modern yang terstruktur dan dapat dilacak, dibagi menjadi dua modul utama:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1.  **Modul PPIC (Perencanaan)**
+    Proses dimulai dari departemen PPIC yang membuat **Rencana Produksi** berdasarkan kebutuhan. Rencana ini bersifat proposal dan harus mendapatkan persetujuan dari Manajer sebelum dapat dieksekusi.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+2.  **Modul Produksi (Eksekusi)**
+    Setelah Manajer menyetujui sebuah Rencana, sistem secara otomatis membuat **Order Produksi** resmi. Tim Produksi kemudian dapat melihat order ini, mengubah statusnya saat pengerjaan dimulai, dan melaporkan hasil akhir (jumlah aktual & reject) setelah selesai.
 
-## Learning Laravel
+Seluruh proses ini didukung oleh sistem otorisasi berbasis peran (Manajer, Staff PPIC, Staff Produksi) dan sistem notifikasi real-time.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
+## ⚙️ Alur Kerja Backend
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Backend ini menyediakan serangkaian endpoint API untuk mengelola sumber daya aplikasi.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Modul PPIC (`ProductionPlanController`)
+- **Pembuatan Rencana (`POST /api/plans`)**: Staff PPIC mengirimkan data produk, jumlah, dan tanggal target. Sistem membuat rencana baru dengan status `menunggu_persetujuan` dan mengirimkan notifikasi ke Manajer.
+- **Persetujuan (`POST /api/plans/{id}/approve`)**: Manajer menyetujui rencana. Status rencana diubah menjadi `disetujui`, **Order Produksi** baru dibuat secara otomatis, dan notifikasi dikirim ke Staff PPIC (pembuat) dan semua Staff Produksi.
+- **Penolakan (`POST /api/plans/{id}/reject`)**: Manajer menolak rencana. Status diubah menjadi `ditolak` dan notifikasi dikirim ke Staff PPIC.
+- **CRUD Tambahan**: Staff PPIC dapat melihat daftar rencana (`GET`), detail (`GET /{id}`), mengedit (`PUT /{id}`), dan menghapus (`DELETE /{id}`) rencana **selama statusnya masih `menunggu_persetujuan`**.
 
-## Laravel Sponsors
+### Modul Produksi (`ProductionOrderController`)
+- **Melihat Daftar Order (`GET /api/orders`)**: Staff Produksi dapat melihat semua order yang siap atau sedang dikerjakan.
+- **Mengubah Status (`PATCH /api/orders/{id}/status`)**: Staff Produksi mengubah status order (misalnya dari `menunggu` ke `sedang_dikerjakan`). Setiap perubahan status akan dicatat di `production_logs` dan mengirim notifikasi progres ke Manajer. Saat order diselesaikan, jumlah aktual dan reject wajib diisi.
+- **Melihat Detail & Riwayat (`GET /api/orders/{id}`)**: Melihat detail lengkap sebuah order, termasuk riwayat perubahan statusnya dari awal hingga akhir.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Fitur Pendukung
+- **Otentikasi (`AuthController`)**: Mengelola register, login, dan logout menggunakan Laravel Sanctum.
+- **Notifikasi (`NotificationController`)**: Menyediakan endpoint untuk mengambil notifikasi yang belum/sudah dibaca oleh pengguna yang sedang login.
+- **Data Master (`ProductController`)**: Menyediakan endpoint untuk mengambil daftar produk.
 
-### Premium Partners
+---
+## 🚀 Instalasi & Setup
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+1.  **Clone repository ini.**
+2.  Salin file `.env.example` menjadi `.env`.
+3.  Konfigurasikan koneksi database Anda di file `.env`.
+4.  Jalankan `composer install` untuk menginstal dependensi.
+5.  Jalankan `php artisan key:generate`.
+6.  Jalankan `php artisan migrate --seed` untuk membuat tabel dan mengisi data awal (user & produk).
+7.  Jalankan `php artisan serve` untuk memulai server pengembangan.
 
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+API akan tersedia di `http://127.0.0.1:8000/api`.
+Login :
+1. Manager : manager@elitech.id | password
+2. Staff PPIC : ppic@elitech.id | password
+3. Staff Produksi : produksi@elitech.id | password
